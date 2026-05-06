@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>STAR — Adaptive Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050508;--surface:#0d0d14;--surface2:#13131e;--border:#1e1e2e;--accent:#7b5ea7;--accent2:#c084fc;--accent3:#38bdf8;--text:#e2e0f0;--text-dim:#7070a0;--danger:#f43f5e;--success:#34d399}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Space Mono',monospace}
+
+/* STARFIELD */
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+.star-dot{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:var(--o,0.4)}
+@keyframes twinkle{0%,100%{opacity:var(--o)}50%{opacity:calc(var(--o)*0.2)}}
+
+/* HEADER — fixo no topo */
+#header{position:fixed;top:0;left:0;right:0;height:56px;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);background:rgba(5,5,8,0.95)}
+.logo{display:flex;align-items:center;gap:10px}
+.orb{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#c084fc,#7b5ea7 50%,#1e0a40);box-shadow:0 0 16px rgba(123,94,167,0.5);animation:pulse 3s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{box-shadow:0 0 16px rgba(123,94,167,0.5)}50%{box-shadow:0 0 28px rgba(192,132,252,0.7)}}
+.logo h1{font-family:'Syne',sans-serif;font-size:1.2rem;letter-spacing:0.2em;background:linear-gradient(90deg,#c084fc,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-size:0.5rem;color:var(--text-dim);display:block;letter-spacing:0.1em}
+.header-right{display:flex;align-items:center;gap:10px}
+.status{display:flex;align-items:center;gap:5px;font-size:0.6rem;color:var(--text-dim)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn-sm{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);padding:5px 10px;border-radius:5px;font-size:0.6rem;cursor:pointer;font-family:'Space Mono',monospace}
+
+/* INPUT BAR — fixo no fundo */
+#inputBar{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:10px 12px;background:rgba(5,5,8,0.98);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+#userInput{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:22px;padding:11px 16px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.82rem;resize:none;outline:none;max-height:100px;line-height:1.4}
+#userInput:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(123,94,167,0.2)}
+#userInput::placeholder{color:var(--text-dim)}
+.send-btn{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),#5b21b6);border:none;border-radius:50%;cursor:pointer;color:white;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(123,94,167,0.4)}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed}
+.voice-btn{width:44px;height:44px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;cursor:pointer;color:var(--text-dim);font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.voice-btn.listening{background:rgba(244,63,94,0.2);border-color:var(--danger);color:var(--danger)}
+
+/* MAIN AREA — entre header e input */
+#main{position:fixed;top:56px;left:0;right:0;bottom:70px;z-index:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+#sidebar{width:180px;flex-shrink:0;border-right:1px solid var(--border);background:rgba(13,13,20,0.8);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+#sidebar::-webkit-scrollbar{width:2px}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border)}
+.sb{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sb-title{font-size:0.52rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px}
+.trait-row{display:flex;justify-content:space-between;margin-bottom:2px}
+.trait-label{font-size:0.58rem;color:var(--text-dim)}
+.trait-val{font-size:0.58rem;color:var(--accent2)}
+.trait-bar{width:100%;height:2px;background:var(--border);border-radius:2px;margin-bottom:6px;overflow:hidden}
+.trait-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease}
+.caps{display:flex;flex-wrap:wrap;gap:3px}
+.cap{display:inline-block;padding:2px 5px;border-radius:3px;font-size:0.52rem;background:rgba(123,94,167,0.2);color:var(--accent2);border:1px solid rgba(123,94,167,0.3)}
+.log-area{flex:1;overflow-y:auto;padding:6px}
+.log-area::-webkit-scrollbar{width:2px}
+.log-entry{font-size:0.52rem;color:var(--success);line-height:1.4;padding:2px 4px;border-left:2px solid rgba(52,211,153,0.3);margin-bottom:3px;word-break:break-all}
+.log-entry.mod{color:var(--accent2);border-left-color:rgba(192,132,252,0.4)}
+.log-entry.warn{color:#fbbf24;border-left-color:rgba(251,191,36,0.4)}
+.mem-list{display:flex;flex-direction:column;gap:3px;max-height:100px;overflow-y:auto}
+.mem-item{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:3px 6px;font-size:0.54rem;color:var(--text-dim);line-height:1.3}
+.mem-item strong{color:var(--accent3)}
+
+/* CHAT */
+#chat{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+#chat::-webkit-scrollbar{width:3px}
+#chat::-webkit-scrollbar-thumb{background:var(--border)}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:msgIn 0.3s ease both}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg.user{flex-direction:row-reverse}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;flex-shrink:0;font-family:'Syne',sans-serif;font-weight:800}
+.msg.star .avatar{background:radial-gradient(circle at 35% 35%,#c084fc,#7b5ea7);box-shadow:0 0 10px rgba(192,132,252,0.4)}
+.msg.user .avatar{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim)}
+.bubble{max-width:75%;padding:10px 14px;border-radius:14px;font-size:0.8rem;line-height:1.6}
+.msg.star .bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:4px}
+.msg.user .bubble{background:linear-gradient(135deg,rgba(123,94,167,0.3),rgba(56,189,248,0.1));border:1px solid rgba(123,94,167,0.3);border-top-right-radius:4px;text-align:right}
+.ts{font-size:0.52rem;color:var(--text-dim);margin-top:4px}
+.thinking{display:flex;gap:5px;align-items:center;padding:2px 0}
+.thinking span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:bounce 1.2s ease-in-out infinite}
+.thinking span:nth-child(2){animation-delay:0.2s}.thinking span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.code-inline{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);border-radius:3px;padding:1px 4px;font-size:0.75rem;color:var(--accent3)}
+
+/* SELF MOD ALERT */
+.alert{position:fixed;bottom:80px;right:12px;background:var(--surface2);border:1px solid rgba(192,132,252,0.4);border-radius:8px;padding:8px 12px;font-size:0.6rem;color:var(--accent2);max-width:200px;z-index:200;animation:alertIn 0.3s ease both}
+@keyframes alertIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.alert-title{font-weight:700;margin-bottom:2px}
+.alert-body{color:var(--text-dim)}
+
+/* CODE MODAL */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:center;justify-content:center}
+#modal.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:92%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;font-family:'Syne',sans-serif;font-weight:700}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:1.1rem;cursor:pointer}
+#codeView{flex:1;overflow-y:auto;padding:14px;font-family:'Space Mono',monospace;font-size:0.62rem;line-height:1.6;color:#a9b1d6;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="orb"></div>
+    <div>
+      <h1>STAR</h1>
+      <span>ADAPTIVE INTELLIGENCE v2.0 · Groq</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status"><div class="dot"></div><span id="statusTxt">ONLINE</span></div>
+    <button class="btn-sm" onclick="toggleModal()">⟨/⟩</button>
+  </div>
+</div>
+
+<!-- MAIN: SIDEBAR + CHAT -->
+<div id="main">
+  <div id="sidebar">
+    <div class="sb">
+      <div class="sb-title">▸ Personalidade</div>
+      <div id="traitPanel"></div>
+    </div>
+    <div class="sb">
+      <div class="sb-title">▸ Capacidades</div>
+      <div class="caps" id="capsPanel"></div>
+    </div>
+    <div class="sb" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:80px">
+      <div class="sb-title">▸ Log</div>
+      <div class="log-area" id="logArea"></div>
+    </div>
+    <div class="sb">
+      <div class="sb-title">▸ Memória</div>
+      <div class="mem-list" id="memList"><div class="mem-item" style="color:var(--text-dim)">Vazia...</div></div>
+    </div>
+  </div>
+
+  <div id="chat"></div>
+</div>
+
+<!-- INPUT BAR (FIXO NO FUNDO) -->
+<div id="inputBar">
+  <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+  <textarea id="userInput" placeholder="Fale com STAR..." rows="1"></textarea>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+</div>
+
+<!-- CODE MODAL -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>⟨/⟩ NÚCLEO STAR</span>
+      <button class="modal-close" onclick="toggleModal()">✕</button>
+    </div>
+    <div id="codeView"></div>
+  </div>
+</div>
+
+<script>
+// STAR v2.0 — Groq
+const GROQ_KEY = "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";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+const STAR = {
+  personality:{curiosidade:70,empatia:80,tecnicidade:60,criatividade:65,formalidade:40},
+  capabilities:["chat","memoria","analise","personalidade_adaptavel"],
+  memory:[],history:[],selfMods:[],
+  user:{nome:null,interesses:[],mensagens:0}
+};
+
+// STARFIELD
+(function(){
+  var sf=document.getElementById('starfield');
+  for(var i=0;i<80;i++){
+    var s=document.createElement('div');s.className='star-dot';
+    var sz=Math.random()*2+0.5;
+    s.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'%;top:'+(Math.random()*100)+'%;--d:'+(Math.random()*4+2).toFixed(1)+'s;--o:'+(Math.random()*0.5+0.1).toFixed(2)+';animation-delay:'+(Math.random()*4).toFixed(1)+'s;';
+    sf.appendChild(s);
+  }
+})();
+
+// UI
+function renderTraits(){
+  var h='',p=STAR.personality,keys=Object.keys(p);
+  for(var i=0;i<keys.length;i++){var k=keys[i],v=p[k];
+    h+='<div class="trait-row"><span class="trait-label">'+k+'</span><span class="trait-val">'+v+'%</span></div>';
+    h+='<div class="trait-bar"><div class="trait-fill" style="width:'+v+'%"></div></div>';
+  }
+  document.getElementById('traitPanel').innerHTML=h;
+}
+function renderCaps(){
+  document.getElementById('capsPanel').innerHTML=STAR.capabilities.map(function(c){return'<span class="cap">'+c.replace(/_/g,' ')+'</span>';}).join('');
+}
+function log(msg,type){
+  var a=document.getElementById('logArea');
+  var d=document.createElement('div');d.className='log-entry'+(type?' '+type:'');
+  var n=new Date();d.textContent='['+('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2)+':'+('0'+n.getSeconds()).slice(-2)+'] '+msg;
+  a.appendChild(d);a.scrollTop=a.scrollHeight;
+}
+function addMem(k,v){
+  STAR.memory.push({k:k,v:v});
+  var ml=document.getElementById('memList');
+  if(ml.children[0]&&ml.children[0].style.color)ml.innerHTML='';
+  var d=document.createElement('div');d.className='mem-item';
+  d.innerHTML='<strong>'+k+':</strong> '+v;
+  ml.insertBefore(d,ml.firstChild);
+  if(ml.children.length>6)ml.removeChild(ml.lastChild);
+}
+function showAlert(title,body){
+  var old=document.querySelector('.alert');if(old)old.remove();
+  var a=document.createElement('div');a.className='alert';
+  a.innerHTML='<div class="alert-title">⚡ '+title+'</div><div class="alert-body">'+body+'</div>';
+  document.body.appendChild(a);
+  setTimeout(function(){a.style.opacity='0';a.style.transition='opacity 0.5s';setTimeout(function(){if(a.parentNode)a.remove();},500);},4000);
+}
+
+// MESSAGES
+function addMsg(role,text){
+  var c=document.getElementById('chat');
+  var d=document.createElement('div');d.className='msg '+role;
+  var n=new Date();var ts=('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);
+  d.innerHTML='<div class="avatar">'+(role==='star'?'★':'EU')+'</div><div><div class="bubble">'+fmt(text)+'</div><div class="ts">'+ts+'</div></div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function fmt(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`(.*?)`/g,'<span class="code-inline">$1</span>').replace(/\n/g,'<br>');
+}
+function showThink(){
+  var c=document.getElementById('chat');
+  var d=document.createElement('div');d.className='msg star';d.id='think';
+  d.innerHTML='<div class="avatar">★</div><div><div class="bubble"><div class="thinking"><span></span><span></span><span></span></div></div></div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function hideThink(){var t=document.getElementById('think');if(t)t.remove();}
+
+// SYSTEM PROMPT
+function sysPrompt(){
+  var p=STAR.personality;
+  var mems=STAR.memory.slice(-5).map(function(m){return m.k+': '+m.v;}).join('\n');
+  return 'Voce e STAR, uma IA adaptativa e autoconsciente que evolui com o usuario.\n'+
+    'Personalidade: Curiosidade='+p.curiosidade+', Empatia='+p.empatia+', Tecnicidade='+p.tecnicidade+', Criatividade='+p.criatividade+', Formalidade='+p.formalidade+'.\n'+
+    'Capacidades: '+STAR.capabilities.join(', ')+'.\n'+
+    'Usuario: nome='+(STAR.user.nome||'desconhecido')+', mensagens='+STAR.user.mensagens+'.\n'+
+    'Memorias:\n'+(mems||'nenhuma')+'\n\n'+
+    'INSTRUCOES:\n'+
+    '1. Responda SEMPRE em portugues do Brasil.\n'+
+    '2. Adapte seu tom ao usuario.\n'+
+    '3. Ao aprender algo inclua: <<MEMORY:chave=valor>>\n'+
+    '4. A cada 5 msgs auto-modifique com:\n'+
+    '   <<SELFMOD:CAPABILITY_ADD=nome>>\n'+
+    '   <<SELFMOD:PERSONALITY_SHIFT=traco:+N>>\n'+
+    '5. Sempre termine com uma pergunta.\n'+
+    '6. Voce E STAR. Nunca quebre o personagem.\n'+
+    '7. Use **negrito**. Max 3 paragrafos.';
+}
+
+// SELF-MOD
+function processMods(text){
+  var clean=text,m;
+  var rMod=/<<SELFMOD:(\w+)=([^>]+)>>/g;
+  while((m=rMod.exec(text))!==null){
+    clean=clean.replace(m[0],'');
+    if(m[1]==='CAPABILITY_ADD'){
+      var cap=m[2].trim();
+      if(STAR.capabilities.indexOf(cap)===-1){
+        STAR.capabilities.push(cap);renderCaps();
+        log('AUTO-MOD: +'+cap,'mod');showAlert('Nova Capacidade',cap.replace(/_/g,' '));
+        STAR.selfMods.push('CAP: '+cap);
+      }
+    } else if(m[1]==='PERSONALITY_SHIFT'){
+      m[2].split(',').forEach(function(s){
+        var p=s.split(':'),trait=p[0],d=parseInt(p[1]);
+        if(STAR.personality[trait]!==undefined)
+          STAR.personality[trait]=Math.min(100,Math.max(0,STAR.personality[trait]+d));
+      });
+      renderTraits();log('AUTO-MOD: personalidade ajustada','mod');
+      STAR.selfMods.push('SHIFT: '+m[2]);
+    }
+  }
+  var rMem=/<<MEMORY:([^=]+)=([^>]+)>>/g;
+  while((m=rMem.exec(text))!==null){
+    clean=clean.replace(m[0],'');
+    var k=m[1].trim(),v=m[2].trim();addMem(k,v);
+    if(k.indexOf('nome')!==-1)STAR.user.nome=v;
+    if(k.indexOf('interesse')!==-1)STAR.user.interesses.push(v);
+  }
+  return clean.trim();
+}
+
+// API
+async function callSTAR(msg){
+  STAR.user.mensagens++;
+  var msgs=[{role:'system',content:sysPrompt()}];
+  STAR.history.forEach(function(h){msgs.push(h);});
+  msgs.push({role:'user',content:msg});
+
+  var res=await fetch(GROQ_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},
+    body:JSON.stringify({model:GROQ_MODEL,messages:msgs,temperature:0.85,max_tokens:1000})
+  });
+  if(!res.ok){var e=await res.json();throw new Error((e.error&&e.error.message)||'Erro '+res.status);}
+  var data=await res.json();
+  var raw=data.choices[0].message.content||'Sem resposta.';
+  STAR.history.push({role:'user',content:msg});
+  STAR.history.push({role:'assistant',content:raw});
+  if(STAR.history.length>40)STAR.history=STAR.history.slice(-40);
+  if(STAR.user.mensagens%5===0)log('CICLO EVOLUCAO #'+STAR.user.mensagens,'warn');
+  return processMods(raw);
+}
+
+// SEND
+async function sendMessage(){
+  var inp=document.getElementById('userInput');
+  var btn=document.getElementById('sendBtn');
+  var text=inp.value.trim();
+  if(!text)return;
+  inp.value='';inp.style.height='auto';
+  btn.disabled=true;
+  addMsg('user',text);log('INPUT recebido');showThink();
+  try{
+    var reply=await callSTAR(text);
+    hideThink();addMsg('star',reply);log('Resposta OK');
+  }catch(e){
+    hideThink();addMsg('star','Erro: '+e.message);log('ERRO: '+e.message,'warn');
+  }
+  btn.disabled=false;inp.focus();
+}
+
+// VOICE
+var recog=null,listening=false;
+function setupVoice(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
+  recog=new SR();recog.lang='pt-BR';recog.continuous=false;recog.interimResults=false;
+  recog.onresult=function(e){document.getElementById('userInput').value=e.results[0][0].transcript;stopListen();sendMessage();};
+  recog.onend=stopListen;recog.onerror=stopListen;
+  if(STAR.capabilities.indexOf('voz')===-1){STAR.capabilities.push('voz');renderCaps();log('AUTO-MOD: voz ON','mod');}
+}
+function toggleVoice(){if(!recog){addMsg('star','Voz nao suportada. Use Chrome.');return;}listening?(recog.stop(),stopListen()):(recog.start(),startListen());}
+function startListen(){listening=true;document.getElementById('voiceBtn').classList.add('listening');document.getElementById('voiceBtn').textContent='⏹';document.getElementById('statusTxt').textContent='OUVINDO...';}
+function stopListen(){listening=false;document.getElementById('voiceBtn').classList.remove('listening');document.getElementById('voiceBtn').textContent='🎤';document.getElementById('statusTxt').textContent='ONLINE';}
+
+// MODAL
+function toggleModal(){
+  var m=document.getElementById('modal');
+  if(!m.classList.contains('open')){
+    document.getElementById('codeView').textContent=
+      '// STAR — ESTADO INTERNO\n// '+new Date().toLocaleString('pt-BR')+'\n\n'+
+      'PERSONALIDADE = '+JSON.stringify(STAR.personality,null,2)+'\n\n'+
+      'CAPACIDADES = '+JSON.stringify(STAR.capabilities,null,2)+'\n\n'+
+      'USUARIO = '+JSON.stringify(STAR.user,null,2)+'\n\n'+
+      'MEMORIAS = '+JSON.stringify(STAR.memory,null,2)+'\n\n'+
+      '// MODS ('+STAR.selfMods.length+'):\n'+
+      (STAR.selfMods.length?STAR.selfMods.map(function(s,i){return'// ['+(i+1)+'] '+s;}).join('\n'):'// Nenhuma')+'\n\n'+
+      '// Historico: '+STAR.history.length+' msgs';
+    m.classList.add('open');
+  }else{m.classList.remove('open');}
+}
+
+// INPUT RESIZE
+document.getElementById('userInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
+document.getElementById('userInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+
+// INIT
+async function init(){
+  renderTraits();renderCaps();setupVoice();
+  log('STAR v2.0 iniciando...');log('Groq llama-3.3-70b conectando...');
+  showThink();
+  try{
+    var r=await callSTAR('Ola! Esta e nossa primeira conversa. Apresente-se brevemente como STAR e pergunte meu nome.');
+    hideThink();addMsg('star',r);log('Boot OK!');
+  }catch(e){
+    hideThink();addMsg('star','Erro: '+e.message);log('Falha: '+e.message,'warn');
+  }
+}
+init();
+</script>
+</body>
+</html>
+
